@@ -2,6 +2,9 @@
 we train the model sentence by sentence, i.e., setting the batch_size = 1
 """
 
+# Professor: Gongbo Tang
+# Assignment 4 - Sequence to sequence model
+
 from __future__ import unicode_literals, print_function, division
 
 import argparse
