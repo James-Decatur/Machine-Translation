@@ -164,7 +164,6 @@ class AttentionDot(nn.Module):
     def forward(self, output_enc, hidden_dec):
         # shapes: output_enc (1, len_src, hidden_size); hidden_dec ((1, 1, hidden_size))
         # 1. compute the attention weights; 2. compute the context vector
-        # print(hidden_dec.shape, output_enc.shape)
         scores = torch.bmm(hidden_dec, output_enc.transpose(1, 2))
         attn_weights = self.softmax(scores)
         ctx_vec = torch.bmm(attn_weights, output_enc)
@@ -224,7 +223,6 @@ class AttentionMultihead(nn.Module):
         self.query = nn.Linear(hidden_size, self.dim_head * num_head)
         self.key = nn.Linear(hidden_size, self.dim_head * num_head)
         self.value = nn.Linear(hidden_size, self.dim_head * num_head)
-        self.dropout = torch.nn.Dropout()
         self.final_linear = nn.Linear(hidden_size, hidden_size)
         
 
