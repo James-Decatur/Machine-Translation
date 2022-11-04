@@ -304,7 +304,7 @@ class AttnDecoderRNN(nn.Module):
         ctx_vec = self.attn(output_enc, hidden_dec)
         output = torch.cat((embedded[0], ctx_vec[0]), 1)
         output = self.attn_combine(output).unsqueeze(0)
-        output = F.relu(output)
+        #output = F.relu(output)
         output, hidden_dec = self.rnn(output, hidden_dec)
         output = self.softmax(self.out(output[0]))
 
