@@ -2,8 +2,6 @@
 we train the model sentence by sentence, i.e., setting the batch_size = 1
 """
 
-# Professor: Gongbo Tang
-# Assignment 4 - Sequence to sequence model
 
 from __future__ import unicode_literals, print_function, division
 
@@ -127,14 +125,11 @@ class EncoderRNN(nn.Module):
         # hidden_size: hidden state dimension
         super(EncoderRNN, self).__init__()
         self.hidden_size = hidden_size
-        # TODO 1: Initilize your word embedding, encoder rnn
         self.embedding = nn.Embedding(input_size, hidden_size)
         self.rnn = nn.GRU(hidden_size, hidden_size)
 
     def forward(self, input, hidden):
         """runs the forward pass of the encoder returns the output and the hidden state"""
-        # TODO 2: complete the forward computation, given the input and the previous hidden state
-        # return the output and the hidden state
         embedded = self.embedding(input).view(1, 1, -1)
         output = embedded
         output, hidden = self.rnn(output, hidden)
@@ -154,7 +149,6 @@ class DecoderRNN(nn.Module):
         super(DecoderRNN, self).__init__()
         self.hidden_size = hidden_size
         self.output_size = output_size
-        # TODO 3: Initilize your word embedding, decoder rnn, output layer, softmax layer
         self.embedding = nn.Embedding(self.output_size, self.hidden_size)
         self.rnn = nn.GRU(self.hidden_size, self.hidden_size)
         self.out = nn.Linear(self.hidden_size, self.output_size)
@@ -163,11 +157,6 @@ class DecoderRNN(nn.Module):
 
     def forward(self, input, hidden):
         """runs the forward pass of the decoder returns the log_softmax, hidden state"""
-        # TODO 4: complete the forward computation, given the input and the previous hidden state
-        # return the following variables
-        # log_softmax: the output after applying LogSoftmax function
-        # and hidden: hidden states
-        # similar to TODO 2, difference: compute the prob over target-side vocabulary given the output
         output = self.embedding(input).view(1, 1, -1)
         output = F.relu(output)
         output, hidden = self.rnn(output, hidden)
@@ -183,7 +172,6 @@ class DecoderRNN(nn.Module):
 
 def train(input_tensor, target_tensor, encoder, decoder, optimizer, criterion):
     encoder_hidden = encoder.get_initial_hidden_state()
-    # make sure the encoder and decoder are in training mode so dropout is applied
     encoder.train()
     decoder.train()
     optimizer.zero_grad()
@@ -194,21 +182,17 @@ def train(input_tensor, target_tensor, encoder, decoder, optimizer, criterion):
     loss = 0
     # encoder-side forward computation
     for ei in range(input_length):
-        # TODO 5: feed each input to the encoder, and get the output
         encoder_output, encoder_hidden = encoder(input_tensor[ei], encoder_hidden)
 
     # set the first input to the decoder is the symbol "SOS"
     decoder_input = torch.tensor([[SOS_index]], device=device)
-    # TODO 5: initialize the decoder with the last encoder hidden state  
     decoder_hidden = encoder_hidden
     
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
     # target-side generation
     for di in range(target_length):
-        # TODO 5: get the output of the decoder, for each step
         decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-        # TODO 5: compute the loss
         loss += criterion(decoder_output, target_tensor[di])
 
         if use_teacher_forcing:
@@ -245,18 +229,15 @@ def translate(encoder, decoder, sentence, src_vocab, tgt_vocab, max_length=MAX_L
         encoder_hidden = encoder.get_initial_hidden_state()
 
         for ei in range(input_length):
-            # TODO 6: feed each input to the encoder, and get the output
             output, encoder_hidden = encoder(input_tensor[ei], encoder_hidden)
             
         # set the first input to the decoder is the symbol "SOS"
         decoder_input = torch.tensor([[SOS_index]], device=device)
-        # TODO 6: initialize the decoder with the last encoder hidden state
         decoder_hidden = encoder_hidden
 
         decoded_words = []
 
         for di in range(max_length):
-            # TODO 6: get the output of the decoder, for each step
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)   
             topv, topi = decoder_output.data.topk(1)
             if topi.item() == EOS_index:
@@ -272,7 +253,7 @@ def translate(encoder, decoder, sentence, src_vocab, tgt_vocab, max_length=MAX_L
 ######################################################################
 
 
-# Translate (dev/test)set takes in a list of sentences and writes out their translates
+# Translate (dev/test) set takes in a list of sentences and writes out their translates
 def translate_sentences(encoder, decoder, pairs, src_vocab, tgt_vocab, max_num_sentences=None, max_length=MAX_LENGTH):
     output_sentences = []
     for pair in pairs[:max_num_sentences]:
@@ -283,9 +264,8 @@ def translate_sentences(encoder, decoder, pairs, src_vocab, tgt_vocab, max_num_s
 
 
 ######################################################################
-# We can translate random sentences  and print out the
+# We can translate random sentences and print out the
 # input, target, and output to make some subjective quality judgements:
-#
 
 def translate_random_sentence(encoder, decoder, pairs, src_vocab, tgt_vocab, n=1):
     for i in range(n):
@@ -361,7 +341,6 @@ def main():
                                            args.tgt_lang,
                                            args.train_file)
 
-    # TODO 0: initialize the encoder and the decoder here
     encoder = EncoderRNN(src_vocab.n_words, args.hidden_size)
     decoder = DecoderRNN(args.hidden_size, tgt_vocab.n_words)
     
