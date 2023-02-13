@@ -278,10 +278,8 @@ class AttnDecoderRNN(nn.Module):
         ctx_vec = self.attn(output_enc, hidden_dec)
         output = torch.cat((embedded[0], ctx_vec[0]), 1)
         output = self.attn_combine(output).unsqueeze(0)
-        #output = F.relu(output)
         output, hidden_dec = self.rnn(output, hidden_dec)
         output = self.softmax(self.out(output[0]))
-
         return output, hidden_dec
 
     def get_initial_hidden_state(self):
@@ -396,7 +394,6 @@ def translate_sentences(encoder, decoder, pairs, src_vocab, tgt_vocab, max_num_s
 ######################################################################
 # We can translate random sentences  and print out the
 # input, target, and output to make some subjective quality judgements:
-#
 
 def translate_random_sentence(encoder, decoder, pairs, src_vocab, tgt_vocab, n=1):
     for i in range(n):
