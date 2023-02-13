@@ -10,13 +10,9 @@ import torch.onnx
 import data
 import model
 
-# Professor: Gongbo Tang
-# Assignment 3 - Neural Language Models
-
 
 def data2batch(data, batch_size):
     ''' transform data into batches '''
-    # figure out how cleanly we can divide the data into batches
     num_batch = data.size(0) // batch_size
     # trim off any extra elements that not fit
     data = data.narrow(0, 0, num_batch * batch_size)
@@ -41,7 +37,6 @@ def get_batch(source, i):
 
 
 def evaluate(data_source):
-    # evaluation mode, no dropout
     model.eval()
     total_loss = 0.0
     num_tokens = len(corpus.dictionary)
@@ -56,13 +51,11 @@ def evaluate(data_source):
 
 
 def train():
-    # training mode, enables dropout
     model.train()
     total_loss = 0.0
     start_time = time.time()
     num_tokens = len(corpus.dictionary)
     hidden = model.init_hidden(args.batch_size)
-    #optimizer.zero_grad()
     for batch, i in enumerate(range(0, train_data.size(0) - 1, args.length_seq)):
         ''' we train models in the mini-batch style, i.e., update the model every batch '''
         # batch: the index of all the batches
@@ -70,18 +63,13 @@ def train():
         data, targets = get_batch(train_data, i)
         model.zero_grad()  # need to reset the gradients in each batch
         hidden = repackage_hidden(hidden)
-        # TODO: given the data, compute the gradients to update the model
-        #  1) forward computation 2) compute the loss 3) backpropagation -> gradients
         output, hidden = model(data, hidden)
         loss = criterion(output, targets)
         loss.backward()
         # clip_grad_norm helps to prevent the gradient explosion in RNNs
         torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
         
-        #print(model.parameters())
-        
         for p in model.parameters():
-            # TODO: update model parameters based on gradients
             p.data.add_(p.grad.data, alpha=-lr)
 
         total_loss += loss.item()
