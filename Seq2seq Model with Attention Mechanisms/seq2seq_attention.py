@@ -2,9 +2,6 @@
 we train the model sentence by sentence, i.e., setting the batch_size = 1
 """
 
-# Professor: Gongbo Tang
-# Lab: Seq2seq Model with Attention Mechanisms
-
 from __future__ import unicode_literals, print_function, division
 
 import argparse
@@ -131,8 +128,6 @@ class EncoderRNN(nn.Module):
         # hidden_size: hidden state dimension
         super(EncoderRNN, self).__init__()
         self.hidden_size = hidden_size
-
-        # TODO 1: Initilize your word embedding, encoder rnn
         self.embedding = nn.Embedding(input_size, hidden_size)
         self.rnn = nn.GRU(hidden_size, hidden_size)
 
@@ -141,8 +136,6 @@ class EncoderRNN(nn.Module):
         """runs the forward pass of the encoder
         returns the output and the hidden state
         """
-        # TODO 2: complete the forward computation, given the input and the previous hidden state
-        # return the output and the hidden state
         embedded = self.embedding(input).view(1, 1, -1)
         output = embedded
         output, hidden = self.rnn(output, hidden)
@@ -175,14 +168,12 @@ class AttentionGeneral(nn.Module):
 
     def __init__(self, hidden_size):
         super(AttentionGeneral, self).__init__()
-        # TODO 7 complete the attention with general computation
         self.softmax = nn.Softmax(dim=-1)
         self.out = nn.Linear(hidden_size, hidden_size, bias=False)
 
     def forward(self, output_enc, hidden_dec):
         # shapes: output_enc (1, len_src, hidden_size); hidden_dec ((1, 1, hidden_size))
         # 1. compute the attention weights; 2. compute the context vector
-        # TODO 7 complete the attention with general computation
         out = self.out(hidden_dec)
         scores = output_enc.bmm(out.view(1, -1, 1)).squeeze(-1)
         attn_weights = self.softmax(scores.view(1, -1))
@@ -195,7 +186,6 @@ class AttentionConcat(nn.Module):
 
     def __init__(self, hidden_size):
         super(AttentionConcat, self).__init__()
-        # TODO 8 complete the attention with concat computation
         self.softmax = nn.Softmax(dim=-1)
         self.out = nn.Linear(hidden_size, hidden_size, bias=False)
         self.weight = nn.Parameter(torch.FloatTensor(1, hidden_size))
@@ -203,7 +193,6 @@ class AttentionConcat(nn.Module):
     def forward(self, output_enc, hidden_dec):
         # shapes: output_enc (1, len_src, hidden_size); hidden_dec ((1, 1, hidden_size))
         # 1. compute the attention weights; 2. compute the context vector
-        # TODO 8 complete the attention with concat computation
         out = torch.tanh(self.out(hidden_dec + output_enc))
         scores = out.bmm(self.weight.unsqueeze(-1)).squeeze(-1)
         attn_weights = self.softmax(scores.view(1, -1))
@@ -219,7 +208,6 @@ class AttentionMultihead(nn.Module):
         self.hidden_size = hidden_size
         self.num_head = num_head
         self.dim_head = hidden_size // num_head
-        # TODO 9 complte the multihead attention with scaled-dot product
         self.query = nn.Linear(hidden_size, self.dim_head * num_head)
         self.key = nn.Linear(hidden_size, self.dim_head * num_head)
         self.value = nn.Linear(hidden_size, self.dim_head * num_head)
@@ -236,25 +224,22 @@ class AttentionMultihead(nn.Module):
     def forward(self, output_enc, hidden_dec):
         # shapes: output_enc (1, len_src, hidden_size); hidden_dec ((1, 1, hidden_size))
         # 1. compute the context vector for each head; 2. concat context vectors from all heads
-        # TODO 9 complte the multihead attention with scaled-dot product
 
-        num_head = self.num_head  # 2
-        dim_head = self.dim_head  # 128
+        num_head = self.num_head
+        dim_head = self.dim_head
+        batch_size = hidden_dec.size()[0] 
 
-        # batch_size = output_enc.size(0)  # 1
-        batch_size = hidden_dec.size()[0]  # 1
+        query = self.query(hidden_dec)
+        key = self.key(output_enc)
+        value = self.value(output_enc)
 
-        query = self.query(hidden_dec)  # torch.Size([1, 1, 256])
-        key = self.key(output_enc)  # torch.Size([1, 15, 256])
-        value = self.value(output_enc)  # torch.Size([1, 15, 256])
-
-        query = query.view(batch_size*num_head, -1, dim_head)  # (1 * 2, ||| torch.Size([2, 1, 128])
-        key = key.view(batch_size*num_head, -1, dim_head)  # (1 * 2,  ||| torch.Size([2, 15, 128])
-        value = value.view(batch_size*num_head, -1, dim_head)  # (1 * 2,  ||| torch.Size([2, 15, 128])
+        query = query.view(batch_size*num_head, -1, dim_head)
+        key = key.view(batch_size*num_head, -1, dim_head)
+        value = value.view(batch_size*num_head, -1, dim_head)
 
         output = self.scaled_dot_product_new(query, key, value)
-        ctx_vec = output.view(batch_size, -1, dim_head * num_head)  # torch.Size([1, 1, 256])
-        ctx_vec = self.final_linear(ctx_vec)  # torch.Size([1, 1, 256])
+        ctx_vec = output.view(batch_size, -1, dim_head * num_head)
+        ctx_vec = self.final_linear(ctx_vec)
         ctx_vec = F.softmax(ctx_vec,dim=-1)
         return ctx_vec
 
@@ -278,11 +263,6 @@ class AttnDecoderRNN(nn.Module):
         elif attn_type == "multihead":
             self.attn = AttentionMultihead(hidden_size, num_head)
 
-        # TODO 3: Initilize your word embedding, decoder rnn, output layer, softmax layer
-        # NOTE: compared to assignment 4, you need an extra linear layer to transform
-        # the vector which is the combination of
-        # the target-side input embedding and the context vector passed from the attention
-
         self.embedding = nn.Embedding(self.output_size, self.hidden_size)
         self.attn_combine = nn.Linear(self.hidden_size * 2, self.hidden_size)
         self.rnn = nn.GRU(self.hidden_size, self.hidden_size)
@@ -293,12 +273,6 @@ class AttnDecoderRNN(nn.Module):
     def forward(self, input, output_enc, hidden_dec):
         """runs the forward pass of the decoder
         returns the probability distribution, hidden state """
-
-        # TODO 4: complete the forward computation, given the input and the previous hidden state
-        # you need to consider the context vector passed from the attn function
-        # return the following variables
-        # probs: the output after applying LogSoftmax function
-        # and hidden: hidden states
 
         embedded = self.embedding(input).view(1, 1, -1)
         ctx_vec = self.attn(output_enc, hidden_dec)
@@ -328,30 +302,23 @@ def train(input_tensor, target_tensor, encoder, decoder, optimizer, criterion):
     target_length = target_tensor.size(0)
 
     loss = 0
-    # encoder-side forward computation
-    # Now you need to store all the encoder_output, and pass them to the attention
     encoder_outputs = torch.zeros(MAX_LENGTH, encoder.hidden_size, device=device)
     for ei in range(input_length):
-        # TODO 5: feed each input to the encoder, and get the output
         encoder_output, encoder_hidden = encoder(input_tensor[ei], encoder_hidden)
         encoder_outputs[ei] = encoder_output[0, 0]
 
     encoder_outputs = encoder_outputs.unsqueeze(0)
-    #  set the first input to the decoder is the symbol "SOS"
     decoder_input = torch.tensor([[SOS_index]], device=device)
-    # TODO 5: initialize the decoder with the last encoder hidden state
     decoder_hidden = encoder_hidden
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
     # target-side generation
     for di in range(target_length):
-        # TODO 5: get the output of the decoder, for each step
-        # Note: here is different from assignment 4
         decoder_output, decoder_hidden = decoder(decoder_input, encoder_outputs,
                                                  decoder_hidden)
-        # TODO 5: compute the loss
+        
         loss += criterion(decoder_output, target_tensor[di])
-
+        
         if use_teacher_forcing:
             # Teacher forcing: Feed the target as the next input
             decoder_input = target_tensor[di]  # Teacher forcing
@@ -388,20 +355,17 @@ def translate(encoder, decoder, sentence, src_vocab, tgt_vocab, max_length=MAX_L
 
         encoder_outputs = torch.zeros(MAX_LENGTH, encoder.hidden_size, device=device)
         for ei in range(input_length):
-            # TODO 6: feed each input to the encoder, and get the output
             output, encoder_hidden = encoder(input_tensor[ei], encoder_hidden)
 
         encoder_outputs = encoder_outputs.unsqueeze(0)
 
         # set the first input to the decoder is the symbol "SOS"
         decoder_input = torch.tensor([[SOS_index]], device=device)
-        # TODO 6: initialize the decoder with the last encoder hidden state
         decoder_hidden = encoder_hidden
 
         decoded_words = []
 
         for di in range(max_length):
-            # TODO 6: get the output of the decoder, for each step
             decoder_output, decoder_hidden = decoder(decoder_input, encoder_outputs, decoder_hidden)
 
             topv, topi = decoder_output.data.topk(1)
@@ -512,7 +476,6 @@ def main():
                                            args.tgt_lang,
                                            args.train_file)
 
-    # TODO 0: initialize the encoder and the decoder here ()  
     encoder = EncoderRNN(src_vocab.n_words, args.hidden_size)
     decoder = AttnDecoderRNN(args.hidden_size, tgt_vocab.n_words, args.attn_type, args.attention_head)
 
