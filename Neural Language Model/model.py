@@ -1,8 +1,5 @@
 import torch.nn as nn
 
-# Professor: Gongbo Tang
-# Assignment 3 - Neural Language Models
-
 class RNNModel(nn.Module):
     """Container module with an encoder, a recurrent module, and an output layer."""
 
@@ -36,12 +33,6 @@ class RNNModel(nn.Module):
         nn.init.uniform_(self.outputLayer.weight, -initrange, initrange)
 
     def forward(self, input, hidden):
-        
-        # TODO: complement the forward computation,
-        # given the input and the hidden states
-        # return softmax results and the hidden states
-        # hints: rnn -> dropout -> output layer -> log_softmax
-        
         emb = self.drop(self.embed(input))
         output, hidden = self.rnn(emb,hidden)
         output = self.drop(output)
@@ -58,5 +49,3 @@ class RNNModel(nn.Module):
                     weight.new_zeros(self.num_layers, bsz, self.hidden_size))
         else:
             return weight.new_zeros(self.num_layers, bsz, self.hidden_size)
-
-
