@@ -1,3 +1,3 @@
 # Machine-Translation-Course-Work
 
-Neural Machine Translation Models that I built for the Machine Translation course at Uppsala University.
+Three Neural Machine Translation Models that I built in the Machine Translation course at Uppsala University.
